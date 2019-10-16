@@ -1,0 +1,21 @@
+{
+	"version": 2,
+	"name": "knit2bot",
+	"public": true,
+	"env": {
+		"NODE_ENV": "production",
+		"BOT_TOKEN": "@knit2bot_token"
+	},
+	"builds": [
+		{
+			"src": "src/now.ts",
+			"use": "@now/node"
+		}
+	],
+	"routes": [
+		{
+			"src": "/.*",
+			"dest": "src/now.ts"
+		}
+	]
+}
