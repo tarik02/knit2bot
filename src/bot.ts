@@ -4,7 +4,7 @@ import _ from 'lodash';
 import moment from 'moment-timezone';
 
 import { curriculums, groups, Day, ringTimes } from './curriculum';
-import { getCurrentAcamedicWeek, getCurrentHalf } from './date-util';
+import { getCurrentHalf } from './date-util';
 import {
 	printDayCurriculum,
 	multilinePad,
@@ -74,7 +74,6 @@ const renderer = () => {
 	const now = moment();
 	const today = Day[now.day() - 1];
 	const tomorrow = Day[now.day() % 7];
-	const week = getCurrentAcamedicWeek(now);
 	const half = getCurrentHalf(now);
 	const halfName = half !== undefined ? printHalfName(half) : '';
 	const otherHalfName = half !== undefined ? printHalfName(half === 0 ? 1 : 0) : '';
@@ -88,7 +87,7 @@ const renderer = () => {
 		],
 
 		..._.fromPairs(groups.map(group => {
-			return [group, (week === undefined || half === undefined) ? [] : [
+			return [group, (half === undefined) ? [] : [
 				curriculums[group][today] ? {
 					title: `${group}: Пари сьогодні`,
 					suffix: ` [${today}, ${halfName}]`,
