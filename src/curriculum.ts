@@ -76,10 +76,13 @@ export const curriculums: Record<string, Curriculum> = {
 					room: 'Л.301',
 				},
 			],
-			{
-				subject: 'Програмування',
-				room: 'Л.303а',
-			},
+			[
+				{
+					subject: 'Програмування',
+					room: 'Л.303а',
+				},
+				undefined,
+			],
 		],
 		'Th': [
 			{

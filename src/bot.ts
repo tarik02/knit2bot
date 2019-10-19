@@ -78,7 +78,7 @@ const renderer = () => {
 	const halfName = half !== undefined ? printHalfName(half) : '';
 	const otherHalfName = half !== undefined ? printHalfName(half === 0 ? 1 : 0) : '';
 
-	return {
+	return _.mapValues({
 		common: [
 			{
 				title: `Дзвінки`,
@@ -115,7 +115,7 @@ const renderer = () => {
 				},
 			]];
 		})),
-	} as Record<string, ReadonlyArray<Action>>;
+	}, (actions) => actions.filter(it => it !== undefined)) as Record<string, ReadonlyArray<Action>>;
 };
 
 export const main = async (bot: Telegraf<ContextMessageUpdate>) => {
