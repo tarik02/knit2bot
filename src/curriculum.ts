@@ -66,6 +66,4 @@ export const curriculums: Record<string, Curriculum> = _.fromPairs(
 		.map(it => [it, require(`./curriculums/${it}`).default])
 );
 
-console.log(curriculums);
-
 export const groups = Object.keys(curriculums);
