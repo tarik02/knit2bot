@@ -58,12 +58,14 @@ export const isDayNotEmpty = (
 	;
 };
 
-const files = fs.readdirSync(path.join(__dirname, 'curriculums'));
 export const curriculums: Record<string, Curriculum> = _.fromPairs(
-	files
-		.map(it => it.replace(/\.ts$/, ''))
+	fs.readdirSync(path.join(__dirname, 'curriculums'))
+		.filter(it => it.match(/^[^.]*\.(ts|js)$/) !== null)
+		.map(it => it.replace(/\.(ts|js)$/, ''))
 		.sort()
 		.map(it => [it, require(`./curriculums/${it}`).default])
 );
+
+console.log(curriculums);
 
 export const groups = Object.keys(curriculums);
