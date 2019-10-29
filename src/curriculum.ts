@@ -36,6 +36,24 @@ export const ringTimes = [
 	'14.50 - 16.10'
 ];
 
+export const isDayNotEmpty = (
+	curriculum: DayCurriculum | undefined,
+	half?: 0 | 1,
+): curriculum is DayCurriculum => {
+	if (curriculum === undefined) {
+		return false;
+	}
+
+	if (half === undefined) {
+		return false;
+	}
+
+	return curriculum
+		.map(it => it instanceof Array ? it[half] : it)
+		.some(it => it !== undefined)
+	;
+};
+
 export const curriculums: Record<string, Curriculum> = {
 	'КСМ-11': {
 		'Tu': [

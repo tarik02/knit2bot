@@ -3,7 +3,13 @@ import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
 import _ from 'lodash';
 import moment from 'moment-timezone';
 
-import { curriculums, groups, Day, ringTimes } from './curriculum';
+import {
+	curriculums,
+	groups,
+	Day,
+	ringTimes,
+	isDayNotEmpty,
+} from './curriculum';
 import { getCurrentHalf } from './date-util';
 import {
 	printDayCurriculum,
@@ -88,17 +94,23 @@ const renderer = () => {
 
 		..._.fromPairs(groups.map(group => {
 			return [group, (half === undefined) ? [] : [
-				curriculums[group][today] ? {
+				{
 					title: `${group}: Пари сьогодні`,
 					suffix: ` [${today}, ${halfName}]`,
-					text: printDayCurriculum(curriculums[group][today]!, half),
-				} : undefined,
+					text: isDayNotEmpty(curriculums[group][today], half)
+						? printDayCurriculum(curriculums[group][today]!, half)
+						: 'Сьогодні немає пар :D'
+					,
+				},
 
-				curriculums[group][tomorrow] ? {
+				{
 					title: `${group}: Пари завтра`,
 					suffix: ` [${tomorrow}, ${halfName}]`,
-					text: printDayCurriculum(curriculums[group][tomorrow]!, half),
-				} : undefined,
+					text: isDayNotEmpty(curriculums[group][tomorrow], half)
+						? printDayCurriculum(curriculums[group][tomorrow]!, half)
+						: 'Завтра пар немає :D'
+					,
+				},
 
 				{
 					title: `${group}: Пари тижня`,
