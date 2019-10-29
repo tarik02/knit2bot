@@ -124,7 +124,7 @@ const renderer = () => {
 						if (now.isBefore(times[0])) {
 							nextTime = times[0];
 						} else {
-							nextTime = times[0].clone().add('days', 1);
+							nextTime = times[0].clone().add(1, 'days');
 						}
 						ringTimeIndex = 0;
 					} else if (nextIndex % 2 === 0) {
