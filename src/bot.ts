@@ -1,7 +1,8 @@
 import FuzzySearch from 'fuzzy-search';
 import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
 import _ from 'lodash';
-import moment from 'moment-timezone';
+import moment, { Moment } from 'moment-timezone';
+import humanizeDuration from 'humanize-duration';
 
 import {
 	curriculums,
@@ -9,6 +10,7 @@ import {
 	Day,
 	ringTimes,
 	isDayNotEmpty,
+	ringTimesNamesWhich,
 } from './curriculum';
 import { getCurrentHalf } from './date-util';
 import {
@@ -60,7 +62,7 @@ type Action = {
 	title: string;
 	suffix?: string;
 	indent?: false;
-	text: string;
+	text: string | (() => string);
 };
 
 const alignButtons = <T>(buttons: T[], maxPerRow: number = MAX_BUTTONS_PER_ROW): T[][] => {
@@ -73,7 +75,13 @@ const alignButtons = <T>(buttons: T[], maxPerRow: number = MAX_BUTTONS_PER_ROW):
 
 const printActionText = (action: Action): string => (
 	`*=== ${action.title + (action.suffix || '')} ===*\n` +
-	multilinePad(action.text, action.indent !== false ? '    ' : '')
+	multilinePad(
+		typeof action.text === 'function'
+			? action.text()
+			: action.text
+		,
+		action.indent !== false ? '    ' : '',
+	)
 );
 
 const renderer = () => {
@@ -87,8 +95,55 @@ const renderer = () => {
 	return _.mapValues({
 		common: [
 			{
-				title: `Дзвінки`,
-				text: indicify(ringTimes.join('\n')),
+				title: 'Дзвінки',
+				text: indicify(
+					ringTimes.map(it => it.join(' - ')).join('\n'),
+				),
+			},
+			{
+				title: `До кінця/початку пари`,
+				text: () => {
+					const now = moment();
+
+					const times = [
+						..._.flatten(ringTimes),
+					].map(it => it.split(':')).map(it => now.clone()
+						.hours(Number(it[0]))
+						.minutes(Number(it[1]))
+						.seconds(0)
+					);
+
+					const nextIndex = times.findIndex(it => it.isAfter(now));
+
+					let nowIsBreak: boolean;
+					let nextTime: Moment;
+					let ringTimeIndex = 0;
+
+					if (nextIndex === -1) {
+						nowIsBreak = true;
+						if (now.isBefore(times[0])) {
+							nextTime = times[0];
+						} else {
+							nextTime = times[0].clone().add('days', 1);
+						}
+						ringTimeIndex = 0;
+					} else if (nextIndex % 2 === 0) {
+						nowIsBreak = true;
+						nextTime = times[nextIndex];
+						ringTimeIndex = nextIndex / 2;
+					} else {
+						nowIsBreak = false;
+						nextTime = times[nextIndex];
+						ringTimeIndex = (nextIndex - 1) / 2;
+					}
+
+					const durationString = humanizeDuration(nextTime.diff(now, 'minutes') * 60 * 1000, {
+						language: 'uk',
+					});
+					const ringTimeName = ringTimesNamesWhich[ringTimeIndex];
+
+					return `До ${nowIsBreak ? 'початку' : 'кінця'} ${ringTimeName} пари - ${durationString}`;
+				},
 			},
 		],
 

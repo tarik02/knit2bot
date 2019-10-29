@@ -33,11 +33,19 @@ export type Curriculum = Readonly<Partial<Record<Day, DayCurriculum>>>;
 
 
 export const ringTimes = [
-	'08.30 - 09.50',
-	'10.00 - 11.20',
-	'11.30 - 12.50',
-	'13.20 - 14.40',
-	'14.50 - 16.10'
+	['08:30', '09:50'],
+	['10:00', '11:20'],
+	['11:30', '12:50'],
+	['13:20', '14:40'],
+	['14:50', '16:10'],
+];
+
+export const ringTimesNamesWhich = [
+	'першої',
+	'другої',
+	'третьої',
+	'четвертої',
+	'п\'ятої',
 ];
 
 export const isDayNotEmpty = (

@@ -1,5 +1,6 @@
 import moment from 'moment-timezone';
 
+moment.locale('uk');
 moment.tz.setDefault('Europe/Kiev');
 
 export const getCurrentHalf = (now: moment.Moment = moment()): 0 | 1 | undefined => {
