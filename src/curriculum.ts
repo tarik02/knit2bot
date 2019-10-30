@@ -49,6 +49,9 @@ export const ringTimesNamesWhich = [
 	'третьої',
 	'четвертої',
 	'п\'ятої',
+	'шостої',
+	'сьомої',
+	'восьмої',
 ];
 
 export const isDayNotEmpty = (
