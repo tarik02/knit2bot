@@ -90,7 +90,9 @@ const renderer = () => {
 	const tomorrow = Day[now.day() % 7];
 	const half = getCurrentHalf(now);
 	const halfName = half !== undefined ? printHalfName(half) : '';
-	const otherHalfName = half !== undefined ? printHalfName(half === 0 ? 1 : 0) : '';
+	const nextHalfName = half !== undefined ? printHalfName(half === 0 ? 1 : 0) : '';
+	const halfLabel = `${half}-й тиждень`;
+	const nextHalfLabel = `${half + 1}-й тиждень`;
 
 	return _.mapValues({
 		common: [
@@ -151,7 +153,7 @@ const renderer = () => {
 			return [group, (half === undefined) ? [] : [
 				{
 					title: `${group}: Пари сьогодні`,
-					suffix: ` [${today}, ${halfName}]`,
+					suffix: ` [${today}, ${halfName}, ${halfLabel}]`,
 					text: isDayNotEmpty(curriculums[group][today], half)
 						? printDayCurriculum(curriculums[group][today]!, half)
 						: 'Сьогодні немає пар :D'
@@ -160,7 +162,7 @@ const renderer = () => {
 
 				{
 					title: `${group}: Пари завтра`,
-					suffix: ` [${tomorrow}, ${halfName}]`,
+					suffix: ` [${tomorrow}, ${halfName}, ${halfLabel}]`,
 					text: isDayNotEmpty(curriculums[group][tomorrow], half)
 						? printDayCurriculum(curriculums[group][tomorrow]!, half)
 						: 'Завтра пар немає :D'
@@ -169,14 +171,14 @@ const renderer = () => {
 
 				{
 					title: `${group}: Пари тижня`,
-					suffix: ` [${halfName}]`,
+					suffix: ` [${halfName}, ${halfLabel}]`,
 					indent: false,
 					text: printWeekCurriculum(curriculums[group], half),
 				},
 
 				{
 					title: `${group}: Пари наступного тижня`,
-					suffix: ` [${otherHalfName}]`,
+					suffix: ` [${nextHalfName}, ${nextHalfLabel}]`,
 					indent: false,
 					text: printWeekCurriculum(curriculums[group], half === 0 ? 1 : 0),
 				},
