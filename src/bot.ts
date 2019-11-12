@@ -12,7 +12,10 @@ import {
 	isDayNotEmpty,
 	ringTimesNamesWhich,
 } from './curriculum';
-import { getCurrentHalf } from './date-util';
+import {
+	getCurrentWeekNumber,
+	getCurrentHalf,
+} from './date-util';
 import {
 	printDayCurriculum,
 	multilinePad,
@@ -91,8 +94,9 @@ const renderer = () => {
 	const half = getCurrentHalf(now);
 	const halfName = half !== undefined ? printHalfName(half) : '';
 	const nextHalfName = half !== undefined ? printHalfName(half === 0 ? 1 : 0) : '';
-	const halfLabel = `${half}-й тиждень`;
-	const nextHalfLabel = `${half + 1}-й тиждень`;
+	const week = getCurrentWeekNumber(now);
+	const weekLabel = `${week}-й тиждень`;
+	const nextWeekLabel = `${week + 1}-й тиждень`;
 
 	return _.mapValues({
 		common: [
@@ -153,7 +157,7 @@ const renderer = () => {
 			return [group, (half === undefined) ? [] : [
 				{
 					title: `${group}: Пари сьогодні`,
-					suffix: ` [${today}, ${halfName}, ${halfLabel}]`,
+					suffix: ` [${today}, ${halfName}, ${weekLabel}]`,
 					text: isDayNotEmpty(curriculums[group][today], half)
 						? printDayCurriculum(curriculums[group][today]!, half)
 						: 'Сьогодні немає пар :D'
@@ -162,7 +166,7 @@ const renderer = () => {
 
 				{
 					title: `${group}: Пари завтра`,
-					suffix: ` [${tomorrow}, ${halfName}, ${halfLabel}]`,
+					suffix: ` [${tomorrow}, ${halfName}, ${weekLabel}]`,
 					text: isDayNotEmpty(curriculums[group][tomorrow], half)
 						? printDayCurriculum(curriculums[group][tomorrow]!, half)
 						: 'Завтра пар немає :D'
@@ -171,14 +175,14 @@ const renderer = () => {
 
 				{
 					title: `${group}: Пари тижня`,
-					suffix: ` [${halfName}, ${halfLabel}]`,
+					suffix: ` [${halfName}, ${weekLabel}]`,
 					indent: false,
 					text: printWeekCurriculum(curriculums[group], half),
 				},
 
 				{
 					title: `${group}: Пари наступного тижня`,
-					suffix: ` [${nextHalfName}, ${nextHalfLabel}]`,
+					suffix: ` [${nextHalfName}, ${nextWeekLabel}]`,
 					indent: false,
 					text: printWeekCurriculum(curriculums[group], half === 0 ? 1 : 0),
 				},
