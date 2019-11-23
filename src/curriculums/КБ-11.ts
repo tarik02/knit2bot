@@ -81,10 +81,13 @@ const curriculum: Curriculum = {
 			subject: 'Дискр.матем.',
 			room: 'Л.313',
 		},
-		{
-			subject: 'Програмування',
-			room: 'Л.303a',
-		},
+		[
+			{
+				subject: 'Програмування',
+				room: 'Л.303a',
+			},
+			undefined,
+		],
 	],
 };
 
