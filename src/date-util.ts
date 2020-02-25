@@ -5,14 +5,7 @@ moment.tz.setDefault('Europe/Kiev');
 
 export const getCurrentWeekNumber = (now: moment.Moment = moment()): number => {
 	const currentWeek = now.week();
-	let startWeek;
-
-	if (now.month() + 1 >= 9) {
-		startWeek = moment(`${now.year()}-09-01`).week();
-	} else {
-		// TODO: This is not checked, fix if it is wrong.
-		startWeek = moment(`${now.year()}-01-08`).week();
-	}
+	const startWeek = moment(`${now.year()}-03-03`).week();
 
 	return currentWeek - startWeek + 1;
 };
