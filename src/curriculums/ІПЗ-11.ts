@@ -2,98 +2,75 @@ import { Curriculum } from '../curriculum';
 
 const curriculum: Curriculum = {
 	'Tu': [
+		undefined,
+		{
+			subject: 'Осн. програмування',
+			room: 'П.18',
+		},
+		{
+			subject: 'Осн. програмування',
+			room: 'П.18',
+		},
 		{
 			subject: 'Фіз.виховання',
 		},
-		{
-			subject: 'Іноземна мова',
-			room: 'Л.102',
-		},
-		[
-			{
-				subject: 'Фізика',
-				room: 'Л.317',
-			},
-			undefined,
-		],
-		[
-			{
-				subject: 'Історія держ.',
-				room: 'Л.3',
-			},
-			undefined,
-		],
 	],
 	'We': [
-		undefined,
 		{
-			subject: 'Лінійна алгебра',
-			room: 'Л.304',
-		},
-		{
-			subject: 'Фізика',
-			room: 'Л.322',
-		},
-		{
-			subject: 'Фізика',
-			room: 'Л.3',
-		},
-	],
-	'Th': [
-		undefined,
-		{
-			subject: 'Фіз.виховання',
-		},
-		{
-			subject: 'Осн.акад.письма',
-			room: 'Л.313',
-		},
-		{
-			subject: 'Алгор.і структури',
-			room: 'П.211/П.18',
+			subject: 'Іноземна мова',
+			room: 'Л.241',
 		},
 		[
 			{
-				subject: 'Алгор.і структури',
-				room: 'П.212а',
+				subject: 'Укр. мова',
+				room: 'Л.1',
 			},
-			undefined,
+			{
+				subject: 'Філософія',
+				room: 'Л.36',
+			},
 		],
-	],
-	'Fr': [
-		undefined,
 		{
-			subject: 'Історія держ.',
-			room: 'Л.314',
-		},
-		{
-			subject: 'Лінійна алгебра',
+			subject: 'Матем. аналіз',
 			room: 'Л.320',
 		},
+		[
+			{
+				subject: 'Осн. програмування',
+				room: 'П.219',
+			},
+			undefined,
+		]
+	],
+	'Th': [
 		{
-			subject: 'Осн.програмування',
-			room: 'П.18/П.213',
+			subject: 'Укр. мова',
+			room: 'Л.241',
 		},
 		{
-			subject: 'Алгор.і структури',
-			room: 'П.212а',
+			subject: 'Філософія',
+			room: 'Л.320',
+		},
+	],
+	'Fr': [
+		{
+			subject: 'Матем. аналіз',
+			room: 'Л.402',
+		},
+		{
+			subject: 'Матем. аналіз',
+			room: 'Л.40',
 		},
 	],
 	'Sa': [
-		[
-			undefined,
-			{
-				subject: 'Осн.програмування',
-				room: 'П.44',
-			},
-		],
-		[
-			undefined,
-			{
-				subject: 'Осн.програмування',
-				room: 'П.219',
-			},
-		],
+		{
+			subject: 'Осн. програм. інжен.',
+			room: 'П.219',
+		},
+		{
+			subject: 'Осн. програм. інжен.',
+			room: 'П.219',
+		},
 	],
 };
 
