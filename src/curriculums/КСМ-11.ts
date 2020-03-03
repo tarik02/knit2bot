@@ -46,13 +46,7 @@ const curriculum: Curriculum = {
 		},
 	],
 	'Fr': [
-		[
-			undefined,
-			{
-				subject: 'Програмування',
-				room: 'Л.303',
-			},
-		],
+		undefined,
 		{
 			subject: 'Програмування',
 			room: 'Л.303',
