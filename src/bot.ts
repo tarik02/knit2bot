@@ -1,237 +1,338 @@
-import FuzzySearch from 'fuzzy-search';
 import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
+import { addDays, setHours, setMinutes, setSeconds, isAfter, isBefore, differenceInMinutes, getDay, getWeek, parse } from 'date-fns';
 import _ from 'lodash';
-import moment, { Moment } from 'moment-timezone';
 import humanizeDuration from 'humanize-duration';
 
-import {
-	curriculums,
-	groups,
-	Day,
-	ringTimes,
-	isDayNotEmpty,
-	ringTimesNamesWhich,
-} from './curriculum';
-import {
-	getCurrentWeekNumber,
-	getCurrentHalf,
-} from './date-util';
-import {
-	printDayCurriculum,
-	multilinePad,
-	indicify,
-	printHalfName,
-	printWeekCurriculum,
-} from './print';
-import { memoized } from './util';
+import { createAPI } from './data/api';
+import { Curriculum } from './data/curriculum';
+import { readLocale } from './locales/Locale';
+import { errorMiddleware, sendSomethingWentWrong } from './parts/error-middleware';
+import { alignButtons } from './utils/buttons';
+import { Env } from './env';
 
+const dayNames = [
+	'monday',
+	'tuesday',
+	'wednesday',
+	'thursday',
+	'friday',
+	'saturday',
+	'sunday',
+];
 
-const MAX_BUTTONS_PER_ROW = 8;
+export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
+	const locale = await readLocale(env.LOCALE);
 
-class SilentError extends Error { }
-
-const sendSomethingWentWrong = async (ctx: ContextMessageUpdate, info?: string): Promise<never> => {
-	if (info !== undefined) {
-		await ctx.reply(':( ' + info);
-	} else {
-		await ctx.reply(':( Щось пішло не так...');
-	}
-
-	throw new SilentError();
-};
-
-const getButtonsPerRowCount = (totalCount: number, maxPerRow: number = MAX_BUTTONS_PER_ROW): number => {
-	// would be cool to have a square set of buttons
-	const goodPerRowCount = Math.floor(Math.sqrt(totalCount));
-
-	const result = _.range(3, totalCount)
-		.map(i =>
-			totalCount % i == 0 && totalCount / i >= 3
-				? totalCount / i
-				: undefined
-		)
-		.filter((it): it is number => it !== undefined)
-		.filter(it => it <= maxPerRow)
-		.concat(goodPerRowCount)[0]!
-	;
-
-	return Math.min(
-		maxPerRow,
-		result,
+	const api = createAPI(
+		locale,
+		env.SHEETS_API_TOKEN,
+		env.SHEETS_ROOT_URL,
 	);
-};
 
-type Action = {
-	title: string;
-	suffix?: string;
-	indent?: false;
-	text: string | (() => string);
-};
-
-const alignButtons = <T>(buttons: T[], maxPerRow: number = MAX_BUTTONS_PER_ROW): T[][] => {
-	if (buttons.length <= 3) {
-		return [buttons];
-	}
-
-	return _.chunk(buttons, getButtonsPerRowCount(buttons.length, maxPerRow));
-};
-
-const printActionText = (action: Action): string => (
-	`*=== ${action.title + (action.suffix || '')} ===*\n` +
-	multilinePad(
-		typeof action.text === 'function'
-			? action.text()
-			: action.text
-		,
-		action.indent !== false ? '    ' : '',
-	)
-);
-
-const renderer = () => {
-	const now = moment();
-	const today = Day[now.day() - 1];
-	const tomorrow = Day[now.day() % 7];
-	const half = getCurrentHalf(now);
-	const halfName = half !== undefined ? printHalfName(half) : '';
-	const nextHalfName = half !== undefined ? printHalfName(half === 0 ? 1 : 0) : '';
-	const week = getCurrentWeekNumber(now);
-	const weekLabel = `${week}-й тиждень`;
-	const nextWeekLabel = `${week + 1}-й тиждень`;
-
-	return _.mapValues({
-		common: [
-			{
-				title: 'Дзвінки',
-				text: indicify(
-					ringTimes.map(it => it.join(' - ')).join('\n'),
-				),
-			},
-			{
-				title: `До кінця/початку пари`,
-				text: () => {
-					const now = moment();
-
-					const times = [
-						..._.flatten(ringTimes),
-					].map(it => it.split(':')).map(it => now.clone()
-						.hours(Number(it[0]))
-						.minutes(Number(it[1]))
-						.seconds(0)
-					);
-
-					const nextIndex = times.findIndex(it => it.isAfter(now));
-
-					let nowIsBreak: boolean;
-					let nextTime: Moment;
-					let ringTimeIndex = 0;
-
-					if (nextIndex === -1) {
-						nowIsBreak = true;
-						if (now.isBefore(times[0])) {
-							nextTime = times[0];
-						} else {
-							nextTime = times[0].clone().add(1, 'days');
-						}
-						ringTimeIndex = 0;
-					} else if (nextIndex % 2 === 0) {
-						nowIsBreak = true;
-						nextTime = times[nextIndex];
-						ringTimeIndex = nextIndex / 2;
-					} else {
-						nowIsBreak = false;
-						nextTime = times[nextIndex];
-						ringTimeIndex = (nextIndex - 1) / 2;
-					}
-
-					const durationString = humanizeDuration(nextTime.diff(now, 'minutes') * 60 * 1000, {
-						language: 'uk',
-					});
-					const ringTimeName = ringTimesNamesWhich[ringTimeIndex];
-
-					return `До ${nowIsBreak ? 'початку' : 'кінця'} ${ringTimeName} пари - ${durationString}`;
-				},
-			},
-		],
-
-		..._.fromPairs(groups.map(group => {
-			return [group, (half === undefined) ? [] : [
-				{
-					title: `${group}: Пари сьогодні`,
-					suffix: ` [${today}, ${halfName}, ${weekLabel}]`,
-					text: isDayNotEmpty(curriculums[group][today], half)
-						? printDayCurriculum(curriculums[group][today]!, half)
-						: 'Сьогодні немає пар :D'
-					,
-				},
-
-				{
-					title: `${group}: Пари завтра`,
-					suffix: ` [${tomorrow}, ${halfName}, ${weekLabel}]`,
-					text: isDayNotEmpty(curriculums[group][tomorrow], half)
-						? printDayCurriculum(curriculums[group][tomorrow]!, half)
-						: 'Завтра пар немає :D'
-					,
-				},
-
-				{
-					title: `${group}: Пари тижня`,
-					suffix: ` [${halfName}, ${weekLabel}]`,
-					indent: false,
-					text: printWeekCurriculum(curriculums[group], half),
-				},
-
-				{
-					title: `${group}: Пари наступного тижня`,
-					suffix: ` [${nextHalfName}, ${nextWeekLabel}]`,
-					indent: false,
-					text: printWeekCurriculum(curriculums[group], half === 0 ? 1 : 0),
-				},
-			]];
-		})),
-	}, (actions) => actions.filter(it => it !== undefined)) as Record<string, ReadonlyArray<Action>>;
-};
-
-export const main = async (bot: Telegraf<ContextMessageUpdate>) => {
 	const me = await bot.telegram.getMe();
 	bot.options.username = me.username;
 
 	bot.catch(console.error);
+	bot.use(errorMiddleware(locale));
 
-	bot.use(async (ctx, next) => {
+	const onStart = async (ctx: ContextMessageUpdate): Promise<void> => {
+		const settings = await api.globalSettings();
+
+		const extra = Markup
+			.keyboard([
+				...alignButtons(settings.groups.map(it => it.name), 2),
+				[
+					locale('buttons.contribute'),
+				],
+			])
+			.oneTime(false)
+			.resize(true)
+			.extra()
+		;
+
+		await ctx.reply(locale('replies.select-group'), extra);
+	};
+
+	bot.start(onStart);
+	bot.hears([
+		locale('buttons.menu'),
+		locale('buttons.back'),
+	], onStart);
+
+	bot.hears(/^\/ask\s+(.*)$/, async ctx => {
+		const from = ctx.from!;
+		const message = ctx.match![1]!.trim();
+
+		await ctx.reply(locale('replies.ask.reply'));
+
+		await bot.telegram.sendMessage(env.MAINTAINER_ID, locale('replies.ask.message', {
+			username: from.username!,
+			id: String(from.id),
+			message,
+		}));
+	});
+
+	bot.hears(/^\/reply\s+([^\s]*)\s+(.*)$/, async ctx => {
+		const id = Number(ctx.match![1]!);
+		const message = ctx.match![2]!.trim();
+
+		await ctx.reply(locale('replies.reply.reply'));
+
+		await bot.telegram.sendMessage(id, locale('replies.reply.message', {
+			message,
+		}));
+	});
+
+	bot.hears(/^\/add\s+([^\s]+)\s+(.*)$/, async ctx => {
+		const from = ctx.from!;
+		const group = ctx.match![1]!;
+		const url = ctx.match![2]!.trim();
+
 		try {
-			await next!();
+			await api.testCurriculum(url);
 		} catch (e) {
-			if (!(e instanceof SilentError)) {
-				try {
-					await sendSomethingWentWrong(ctx);
-				} catch {
-				}
-
-				throw e;
-			}
+			console.error(e);
+			await ctx.reply(locale('replies.add.error'));
+			return;
 		}
+
+		await ctx.reply(locale('replies.add.reply'));
+
+		await bot.telegram.sendMessage(env.MAINTAINER_ID, locale('replies.add.message', {
+			username: from.username!,
+			id: String(from.id),
+			group,
+			url,
+		}));
 	});
 
-	const render = memoized(renderer, 5 * 60 * 1000);
+	bot.hears(locale('buttons.rings'), async ctx => {
+		const settings = await api.globalSettings();
 
-	bot.start(async ctx => {
-		const extra = Markup
-			.keyboard(alignButtons(groups))
-			.oneTime(false)
-			.resize(true)
-			.extra()
-			;
-		await ctx.reply('Виберіть групу', extra);
+		await ctx.replyWithMarkdown([
+			locale('replies.rings.header'),
+			...settings.rings.map((it, i) => (
+				locale('replies.rings.item', {
+					index: String(i + 1),
+					start: it.start,
+					end: it.end,
+				})
+			))
+		].join('\n'));
 	});
 
-	bot.hears(/^(Меню|Назад)$/, async ctx => {
-		const extra = Markup
-			.keyboard(alignButtons(groups))
-			.oneTime(false)
-			.resize(true)
-			.extra()
-			;
-		await ctx.reply('Виберіть групу', extra);
+	bot.hears(locale('buttons.time'), async ctx => {
+		const settings = await api.globalSettings();
+
+		const now = new Date();
+
+		const times = _(settings.rings)
+			.map(it => [it.start, it.end])
+			.flatten()
+			.map(it => it.split(':'))
+			.map(it => setHours(setMinutes(setSeconds(now, 0), Number(it[1])), Number(it[0])))
+			.value()
+		;
+
+		const nextIndex = times.findIndex(it => isAfter(it, now));
+
+		let nowIsBreak: boolean;
+		let nextTime: Date;
+		let ringTimeIndex = 0;
+
+		if (nextIndex === -1) {
+			nowIsBreak = true;
+			if (isBefore(now, times[0])) {
+				nextTime = times[0];
+			} else {
+				nextTime = addDays(times[0], 1);
+			}
+			ringTimeIndex = 0;
+		} else if (nextIndex % 2 === 0) {
+			nowIsBreak = true;
+			nextTime = times[nextIndex];
+			ringTimeIndex = nextIndex / 2;
+		} else {
+			nowIsBreak = false;
+			nextTime = times[nextIndex];
+			ringTimeIndex = (nextIndex - 1) / 2;
+		}
+
+		const durationString = humanizeDuration(differenceInMinutes(nextTime, now) * 60 * 1000, {
+			language: env.LOCALE,
+		});
+
+		await ctx.replyWithMarkdown([
+			locale('replies.time.header'),
+			locale('replies.time.template', {
+				stamp: locale(nowIsBreak ? 'replies.time.stamps.start' : 'replies.time.stamps.end'),
+				number: locale(`replies.time.numbers.${ringTimeIndex + 1}`),
+				duration: durationString,
+			}),
+		].join('\n'));
+	});
+
+	bot.hears(locale('buttons.contribute'), async ctx => {
+		await ctx.replyWithMarkdown(locale('replies.contribute.reply', {
+			exampleUrl: env.SHEETS_EXAMPLE_URL,
+		}));
+	});
+
+	const sendDayCurriculum = async (
+		ctx: ContextMessageUpdate,
+		type: string,
+		groupName: string,
+		curriculum: Curriculum,
+		now: Date,
+	) => {
+		const settings = await api.globalSettings();
+
+		const today = (getDay(now) + 6) % 7;
+		const week = getWeek(now) - getWeek(parse(
+			settings.settings.find(it => it.key === locale('table.settings.keys.first-week'))!.value,
+			'yyyy.MM.dd',
+			now,
+		));
+		const half = week % 2;
+
+		const info = {
+			group: groupName,
+			day: locale(`days.${dayNames[today]}.short`),
+			week: locale(`weeks.format`, {
+				number: String(week + 1),
+			}),
+			half: locale(`weeks.half.${half}`),
+		};
+
+		const prefix = locale(`replies.curriculum.${type}.header`, info);
+
+		if (curriculum[today]) {
+			await ctx.replyWithMarkdown([
+				prefix,
+				...(
+					curriculum[today]
+						.map(it => it instanceof Array ? it[half] : it)
+						.map((it, i) => locale(
+							it ? `replies.curriculum.${type}.item` : `replies.curriculum.${type}.item-empty`,
+							{
+								index: String(i + 1),
+								name: it || '',
+							},
+						))
+				)
+			].join('\n'));
+		} else {
+			await ctx.replyWithMarkdown(prefix + '\n' + locale(`replies.curriculum.${type}.empty`));
+		}
+	};
+
+	const sendWeekCurriculum = async (
+		ctx: ContextMessageUpdate,
+		type: string,
+		groupName: string,
+		curriculum: Curriculum,
+		now: Date,
+	) => {
+		const settings = await api.globalSettings();
+
+		const week = getWeek(now) - getWeek(parse(
+			settings.settings.find(it => it.key === locale('table.settings.keys.first-week'))!.value,
+			'yyyy.MM.dd',
+			now,
+		));
+		const half = week % 2;
+
+		const info = {
+			group: groupName,
+			week: locale(`weeks.format`, {
+				number: String(week + 1),
+			}),
+			half: locale(`weeks.half.${half}`),
+		};
+
+		const prefix = locale(`replies.curriculum.${type}.header`, info);
+
+		await ctx.replyWithMarkdown([
+			prefix,
+			...(
+				_(curriculum)
+					.map((day, i) => (
+						day
+							? [
+								locale(`replies.curriculum.${type}.day`, {
+									name: locale(`days.${dayNames[i]}.short`),
+								}),
+								...day
+									.map(it => it instanceof Array ? it[half] : it)
+									.map((it, i) => locale(
+										it ? `replies.curriculum.${type}.item` : `replies.curriculum.${type}.item-empty`,
+										{
+											index: String(i + 1),
+											name: it || '',
+										},
+									))
+							]
+							: undefined
+					))
+					.filter()
+					.flatten()
+					.value()
+			),
+		].join('\n'));
+	};
+
+	bot.hears(/^(.*): (.*)$/, async ctx => {
+		const [, groupName, actionName] = ctx.match!;
+
+		const curriculum = await api.groupCurriculum(groupName);
+
+		if (!curriculum) {
+			return await sendSomethingWentWrong(ctx, locale, locale('errors.unknown-group'));
+		}
+
+		switch (actionName) {
+		case locale('buttons.curriculum.today'):
+			await sendDayCurriculum(
+				ctx,
+				'today',
+				groupName,
+				curriculum,
+				new Date(),
+			);
+			break;
+		case locale('buttons.curriculum.tomorrow'): {
+			await sendDayCurriculum(
+				ctx,
+				'tomorrow',
+				groupName,
+				curriculum,
+				addDays(new Date(), 1),
+			);
+			break;
+		}
+		case locale('buttons.curriculum.week'):
+			await sendWeekCurriculum(
+				ctx,
+				'week',
+				groupName,
+				curriculum,
+				new Date(),
+			);
+			break;
+		case locale('buttons.curriculum.next-week'):
+			await sendWeekCurriculum(
+				ctx,
+				'next-week',
+				groupName,
+				curriculum,
+				addDays(new Date(), 7),
+			);
+			break;
+		default:
+			await sendSomethingWentWrong(ctx, locale);
+		}
+
+		return;
 	});
 
 	bot.on('text', async ctx => {
@@ -239,78 +340,38 @@ export const main = async (bot: Telegraf<ContextMessageUpdate>) => {
 			return;
 		}
 
-		const actions = render();
+		const settings = await api.globalSettings();
 		const text = ctx.message!.text!;
 
-		if (groups.includes(text)) {
-			const buttons = [
-				...alignButtons(actions[text].map(it => it.title), 2),
-				...alignButtons([
-					...actions['common'].map(it => it.title),
-					'Меню',
-				], 2),
-			];
-
-			const extra = Markup
-				.keyboard(buttons)
-				.oneTime(false)
-				.resize(true)
-				.extra()
-				;
-			await ctx.reply('Що потрібно?', extra);
-		} else {
-			const match = text.match(/^(.*): .*$/);
-			if (match) {
-				const [, group] = match;
-
-				if (!(group in actions)) {
-					return await sendSomethingWentWrong(ctx);
-				}
-
-				const action = actions[group].find(it => it.title === text);
-				if (action === undefined) {
-					return await sendSomethingWentWrong(ctx);
-				}
-
-				await ctx.replyWithMarkdown(printActionText(action));
-			} else {
-				const action = actions['common'].find(it => it.title === text);
-				if (action === undefined) {
-					return await sendSomethingWentWrong(ctx);
-				}
-
-				await ctx.replyWithMarkdown(printActionText(action));
-			}
+		if (text.startsWith('/')) {
+			await sendSomethingWentWrong(ctx, locale, locale('errors.unknown-command'));
 		}
 
-		return;
-	});
+		if (!settings.groups.find(it => it.name === text)) {
+			await sendSomethingWentWrong(ctx, locale, locale('errors.unknown-group'));
+		}
 
-	bot.on('inline_query', async ctx => {
-		const actions = render();
-		const searcher = new FuzzySearch(_.flatten(Object.values(actions)), [
-			'title',
-		], {
-			caseSensitive: false,
-			sort: true,
-		});
+		const buttons = [
+			...alignButtons([
+				`${text}: ${locale('buttons.curriculum.today')}`,
+				`${text}: ${locale('buttons.curriculum.tomorrow')}`,
+				`${text}: ${locale('buttons.curriculum.week')}`,
+				`${text}: ${locale('buttons.curriculum.next-week')}`,
+			], 2),
+			...alignButtons([
+				locale('buttons.rings'),
+				locale('buttons.time'),
+				locale('buttons.menu'),
+			], 3),
+		];
 
-		await ctx.answerInlineQuery((
-			searcher.search(ctx.inlineQuery!.query)
-				.filter((result): result is Action => result !== undefined)
-				.map(action => ({
-					type: 'article',
-					id: Buffer.from(action.title, 'utf8').toString('hex').substring(0, 64),
-					title: action.title,
-					input_message_content: {
-						message_text: printActionText(action),
-						parse_mode: 'Markdown',
-					},
-				}))
-				.slice(0, 50)
-		), {
-			cache_time: process.env.NODE_ENV === 'development' ? 0 : 30,
-			is_personal: false,
-		});
+		const extra = Markup
+			.keyboard(buttons)
+			.oneTime(false)
+			.resize(true)
+			.extra()
+		;
+
+		await ctx.reply(locale('prompt'), extra);
 	});
 };

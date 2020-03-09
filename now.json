@@ -1,21 +1,27 @@
 {
 	"version": 2,
-	"name": "knit2bot",
 	"public": true,
 	"env": {
 		"NODE_ENV": "production",
-		"BOT_TOKEN": "@knit2bot_token"
+		"LOCALE": "@knit2bot_locale",
+		"BOT_TOKEN": "@knit2bot_token",
+		"BOT_MODE": "@knit2bot_mode",
+		"SHEETS_API_TOKEN": "@knit2bot_sheets_token",
+		"SHEETS_ROOT_URL": "@knit2bot_sheets_root",
+		"SHEETS_EXAMPLE_URL": "@knit2bot_sheets_example",
+		"MAINTAINER_ID": "@knit2bot_maintainer_id",
+		"MAINTAINER_USERNAME": "@knit2bot_maintainer_username"
 	},
-	"builds": [
-		{
-			"src": "src/now.ts",
-			"use": "@now/node"
-		}
-	],
 	"routes": [
 		{
 			"src": "/.*",
-			"dest": "src/now.ts"
+			"dest": "api/index.ts"
 		}
-	]
+	],
+	"functions": {
+		"api/index.ts": {
+			"runtime": "@now/node@1.4.1",
+			"includeFiles": "src/locales/*.yml"
+		}
+	}
 }

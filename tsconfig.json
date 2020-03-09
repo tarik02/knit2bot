@@ -1,13 +1,13 @@
 {
 	"compilerOptions": {
 		"incremental": true,
-		"target": "es6",
+		"target": "ES6",
 		"module": "commonjs",
 		"lib": [
-			"es6",
-			"es7",
-			"es2019.object",
-			"dom",
+			"ES6",
+			"ES7",
+			"ES2019.Object",
+			"ESNext",
 			"esnext.asynciterable"
 		],
 		"allowJs": false,

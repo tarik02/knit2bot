@@ -9,7 +9,7 @@ import { readEnv } from './env';
 
 	const bot = new Telegraf(env.BOT_TOKEN);
 
-	await main(bot);
+	await main(env, bot);
 
 	switch (env.BOT_MODE) {
 	case 'polling':

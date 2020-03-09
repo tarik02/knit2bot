@@ -1,0 +1,157 @@
+prompt: 'Запитуй'
+
+
+buttons:
+  menu: 'Меню'
+  back: 'Назад'
+  rings: 'Дзвінки'
+  time: 'До початку/кінця пари'
+  contribute: 'Хочу додати розклад своєї групи'
+
+  curriculum:
+    today: 'Пари сьогодні'
+    tomorrow: 'Пари завтра'
+    week: 'Пари тижня'
+    next-week: 'Пари наступного тижня'
+
+
+errors:
+  template: ':( {text}'
+  default: 'Щось пішло не так...'
+  unknown-group: 'Такої групи я не знаю'
+  unknown-command: 'Якась незнайома мені команда'
+
+
+replies:
+  select-group: 'Виберіть групу'
+
+  contribute:
+    reply: |
+      Для початку, створи таблицю зі своїм рокладом на [Google Sheets](https://sheets.new) за [цим зразком]({exampleUrl}).
+      Якщо у полі "знаменник" немає тексту, то це означає що заняття в чисельнику і знаменнику співпадають.
+      Якщо у полі "чисельник" або "знаменник" стоїть прочерк (`-`), то це означає відсутність заняття.
+
+      Створи посилання для доступу та напиши мені `/add <назва групи> <посилання для доступу>`.
+
+      Якщо потрібно змінити розклад, просто міняй таблицю.
+
+      Якщо маєш питання - пиши `/ask <повідомлення>` і я зв'яжуся з тобою.
+
+  add:
+    reply: 'Заявка прийнята.'
+    error: 'Виникла помилка. Перевір правильність та доступність адреси, а також правильність заповнення розкладу.'
+    message: |
+      Заявка на додавання розкладу від @{username} (`{id}`):
+      Група: {group}
+      URL: {url}
+
+  ask:
+    reply: 'Ваше питання прийняте. Чекайте на відповідь.'
+    message: |
+      Питання від @{username} (`{id}`):
+      {message}
+
+  reply:
+    reply: 'Відповідь надіслана.'
+    message: |
+      Відповідь на ваше питання:
+      {message}
+
+  rings:
+    header: '*=== Дзвінки ===*'
+    item: '    *[{index}]* {start} - {end}'
+
+  time:
+    header: '*=== До початку/кінця пари ===*'
+    template: '    До {stamp} {number} пари - {duration}'
+    stamps:
+      start: 'початку'
+      end: 'кінця'
+    numbers:
+      1: 'першої'
+      2: 'другої'
+      3: 'третьої'
+      4: 'четвертої'
+      5: "п'ятої"
+      6: 'шостої'
+      7: 'сьомої'
+      8: 'восьмої'
+
+  curriculum:
+    today:
+      header: '*=== {group}: Пари сьогодні [{day}, {half}, {week}] ===*'
+      empty: '    Сьогодні пар немає :D'
+      item: '    *[{index}]* {name}'
+      item-empty: '    *[{index}]* {name}'
+
+    tomorrow:
+      header: '*=== {group}: Пари завтра [{day}, {half}, {week}] ===*'
+      empty: '    Завтра пар немає :D'
+      item: '    *[{index}]* {name}'
+      item-empty: '    *[{index}]* {name}'
+
+    week:
+      header: '*=== {group}: Пари тижня [{half}, {week}] ===*'
+      day: '    *=== {name} ===*'
+      item: '        *[{index}]* {name}'
+      item-empty: '        *[{index}]* -'
+
+    next-week:
+      header: '*=== {group}: Пари наступного тижня [{half}, {week}] ===*'
+      day: '    *=== {name} ===*'
+      item: '        *[{index}]* {name}'
+      item-empty: '        *[{index}]* -'
+
+
+days:
+  monday:
+    name: 'Понеділок'
+    short: 'Пн'
+  tuesday:
+    name: 'Вівторок'
+    short: 'Вт'
+  wednesday:
+    name: 'Середа'
+    short: 'Ср'
+  thursday:
+    name: 'Четвер'
+    short: 'Чт'
+  friday:
+    name: "П'ятниця"
+    short: 'Пт'
+  saturday:
+    name: 'Субота'
+    short: 'Сб'
+  sunday:
+    name: 'Неділя'
+    short: 'Нд'
+
+
+weeks:
+  format: '{number}-й тиждень'
+  half:
+    0: 'Чисельник'
+    1: 'Знаменник'
+
+
+table:
+  rings:
+    name: 'Дзвінки'
+    fields:
+      start: 'Початок'
+      end: 'Кінець'
+      title: 'Назва'
+
+  settings:
+    name: 'Налаштування'
+    fields:
+      key: 'Ключ'
+      value: 'Значення'
+    keys:
+      first-week: 'Перший тиждень навчання'
+
+  groups:
+    name: 'Групи'
+    fields:
+      name: 'Назва'
+      url: 'Розклад'
