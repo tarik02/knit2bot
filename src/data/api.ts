@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 
 import { Locale } from '../locales/Locale';
-import { memoized } from '../utils/memoized';
 
+import { createCache } from './cache';
 import { parseSettings, getSpreadsheetId, parseCurriculum } from './sheets';
 
 export const createAPI = (
@@ -59,14 +59,24 @@ export const createAPI = (
 		})).data.valueRanges![0].values!;
 	};
 
-	const globalSettings = memoized(async () => {
+	const cache = createCache();
+	const globalCache = cache({
+		interval: 60,
+		intervalFn: interval => interval,
+		lifetime: Infinity,
+	});
+	const groupCache = cache({
+		interval: 60,
+	});
+
+	const globalSettings = globalCache(async () => {
 		return parseSettings(
 			await fetchSheet(globalSettingsSheetId),
 			settingsDef,
 		);
-	}, 60 * 1000);
+	});
 
-	const groupCurriculum = memoized(async (groupName: string) => {
+	const groupCurriculum = groupCache(async (groupName: string) => {
 		const settings = await globalSettings();
 		const group = settings.groups.find(it => it.name === groupName);
 
@@ -79,7 +89,7 @@ export const createAPI = (
 		const sheet = await fetchSheet(id);
 
 		return parseCurriculum(sheet, days);
-	}, 60 * 1000);
+	});
 
 	const testCurriculum = async (url: string) => {
 		const id = getSpreadsheetId(url);
