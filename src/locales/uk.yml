@@ -82,13 +82,13 @@ replies:
       header: '*=== {group}: Пари сьогодні [{day}, {half}, {week}] ===*'
       empty: '    Сьогодні пар немає :D'
       item: '    *[{index}]* {name}'
-      item-empty: '    *[{index}]* {name}'
+      item-empty: '    *[{index}]* -'
 
     tomorrow:
       header: '*=== {group}: Пари завтра [{day}, {half}, {week}] ===*'
       empty: '    Завтра пар немає :D'
       item: '    *[{index}]* {name}'
-      item-empty: '    *[{index}]* {name}'
+      item-empty: '    *[{index}]* -'
 
     week:
       header: '*=== {group}: Пари тижня [{half}, {week}] ===*'
