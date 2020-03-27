@@ -4,6 +4,7 @@
 	"env": {
 		"NODE_ENV": "production",
 		"LOCALE": "@knit2bot_locale",
+		"TIMEZONE": "@knit2bot_timezone",
 		"BOT_TOKEN": "@knit2bot_token",
 		"BOT_MODE": "@knit2bot_mode",
 		"SHEETS_API_TOKEN": "@knit2bot_sheets_token",

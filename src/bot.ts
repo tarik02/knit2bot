@@ -1,5 +1,6 @@
 import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
 import { addDays, setHours, setMinutes, setSeconds, isAfter, isBefore, differenceInMinutes, getDay, getWeek, parse } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import _ from 'lodash';
 import humanizeDuration from 'humanize-duration';
 
@@ -28,6 +29,8 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 		env.SHEETS_API_TOKEN,
 		env.SHEETS_ROOT_URL,
 	);
+
+	const getNow = () => utcToZonedTime(new Date(), env.TIMEZONE);
 
 	const me = await bot.telegram.getMe();
 	bot.options.username = me.username;
@@ -124,7 +127,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 	bot.hears(locale('buttons.time'), async ctx => {
 		const settings = await api.globalSettings();
 
-		const now = new Date();
+		const now = getNow();
 
 		const times = _(settings.rings)
 			.map(it => [it.start, it.end])
@@ -297,7 +300,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 				'today',
 				groupName,
 				curriculum,
-				new Date(),
+				getNow(),
 			);
 			break;
 		case locale('buttons.curriculum.tomorrow'): {
@@ -306,7 +309,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 				'tomorrow',
 				groupName,
 				curriculum,
-				addDays(new Date(), 1),
+				addDays(getNow(), 1),
 			);
 			break;
 		}
@@ -316,7 +319,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 				'week',
 				groupName,
 				curriculum,
-				new Date(),
+				getNow(),
 			);
 			break;
 		case locale('buttons.curriculum.next-week'):
@@ -325,7 +328,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 				'next-week',
 				groupName,
 				curriculum,
-				addDays(new Date(), 7),
+				addDays(getNow(), 7),
 			);
 			break;
 		default:

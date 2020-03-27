@@ -14,6 +14,7 @@ export const Env = t.intersection([
 		SHEETS_EXAMPLE_URL: t.string,
 
 		LOCALE: t.string,
+		TIMEZONE: t.string,
 
 		MAINTAINER_ID: new t.Type<number, string, unknown>(
 			'number',
