@@ -1,6 +1,6 @@
-import { hash } from '../utils/hash';
-import { report } from '../utils/report';
-import { timeout, Timeout } from '../utils/timeout';
+import { hash } from './hash';
+import { report } from './report';
+import { timeout, Timeout } from './timeout';
 
 export type Config = {
 	interval: number;

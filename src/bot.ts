@@ -1,6 +1,7 @@
-import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
+import Fuse from 'fuse.js';
 import { addDays, setHours, setMinutes, setSeconds, isAfter, isBefore, differenceInMinutes, getDay, getWeek, parse } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
+import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
 import _ from 'lodash';
 import humanizeDuration from 'humanize-duration';
 
@@ -9,6 +10,8 @@ import { Curriculum } from './data/curriculum';
 import { readLocale } from './locales/Locale';
 import { errorMiddleware, sendSomethingWentWrong } from './parts/error-middleware';
 import { alignButtons } from './utils/buttons';
+import { createCache } from './utils/cache';
+import { hash } from './utils/hash';
 import { Env } from './env';
 
 const dayNames = [
@@ -109,10 +112,10 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 		}));
 	});
 
-	bot.hears(locale('buttons.rings'), async ctx => {
+	const buildRingTimes = async () => {
 		const settings = await api.globalSettings();
 
-		await ctx.replyWithMarkdown([
+		return [
 			locale('replies.rings.header'),
 			...settings.rings.map((it, i) => (
 				locale('replies.rings.item', {
@@ -121,10 +124,10 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 					end: it.end,
 				})
 			))
-		].join('\n'));
-	});
+		].join('\n');
+	};
 
-	bot.hears(locale('buttons.time'), async ctx => {
+	const buildTime = async () => {
 		const settings = await api.globalSettings();
 
 		const now = getNow();
@@ -165,24 +168,17 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 			language: env.LOCALE,
 		});
 
-		await ctx.replyWithMarkdown([
+		return [
 			locale('replies.time.header'),
 			locale('replies.time.template', {
 				stamp: locale(nowIsBreak ? 'replies.time.stamps.start' : 'replies.time.stamps.end'),
 				number: locale(`replies.time.numbers.${ringTimeIndex + 1}`),
 				duration: durationString,
 			}),
-		].join('\n'));
-	});
+		].join('\n');
+	};
 
-	bot.hears(locale('buttons.contribute'), async ctx => {
-		await ctx.replyWithMarkdown(locale('replies.contribute.reply', {
-			exampleUrl: env.SHEETS_EXAMPLE_URL,
-		}));
-	});
-
-	const sendDayCurriculum = async (
-		ctx: ContextMessageUpdate,
+	const buildDayCurriculum = async (
 		type: string,
 		groupName: string,
 		curriculum: Curriculum,
@@ -209,28 +205,45 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 
 		const prefix = locale(`replies.curriculum.${type}.header`, info);
 
-		if (curriculum[today]) {
-			await ctx.replyWithMarkdown([
-				prefix,
-				...(
-					curriculum[today]
-						.map(it => it instanceof Array ? it[half] : it)
-						.map((it, i) => locale(
-							it ? `replies.curriculum.${type}.item` : `replies.curriculum.${type}.item-empty`,
-							{
-								index: String(i + 1),
-								name: it || '',
-							},
-						))
-				)
-			].join('\n'));
-		} else {
-			await ctx.replyWithMarkdown(prefix + '\n' + locale(`replies.curriculum.${type}.empty`));
+		if (!curriculum[today]) {
+			return prefix + '\n' + locale(`replies.curriculum.${type}.empty`);
 		}
+
+		return [
+			prefix,
+			...(
+				curriculum[today]
+					.map(it => it instanceof Array ? it[half] : it)
+					.map((it, i) => locale(
+						it ? `replies.curriculum.${type}.item` : `replies.curriculum.${type}.item-empty`,
+						{
+							index: String(i + 1),
+							name: it || '',
+						},
+					))
+			)
+		].join('\n');
 	};
 
-	const sendWeekCurriculum = async (
-		ctx: ContextMessageUpdate,
+	const buildTodayCurriculum = async (groupName: string, curriculum: Curriculum) => (
+		await buildDayCurriculum(
+			'today',
+			groupName,
+			curriculum,
+			getNow(),
+		)
+	);
+
+	const buildTomorrowCurriculum = async (groupName: string, curriculum: Curriculum) => (
+		await buildDayCurriculum(
+			'tomorrow',
+			groupName,
+			curriculum,
+			addDays(getNow(), 1),
+		)
+	);
+
+	const buildWeekCurriculum = async (
 		type: string,
 		groupName: string,
 		curriculum: Curriculum,
@@ -255,7 +268,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 
 		const prefix = locale(`replies.curriculum.${type}.header`, info);
 
-		await ctx.replyWithMarkdown([
+		return [
 			prefix,
 			...(
 				_(curriculum)
@@ -281,8 +294,44 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 					.flatten()
 					.value()
 			),
-		].join('\n'));
+		].join('\n');
 	};
+
+	const buildCurrentWeekCurriculum = async (groupName: string, curriculum: Curriculum) => (
+		await buildWeekCurriculum(
+			'week',
+			groupName,
+			curriculum,
+			getNow(),
+		)
+	);
+
+	const buildNextWeekCurriculum = async (groupName: string, curriculum: Curriculum) => (
+		await buildWeekCurriculum(
+			'next-week',
+			groupName,
+			curriculum,
+			addDays(getNow(), 7),
+		)
+	);
+
+	bot.hears(locale('buttons.rings'), async ctx => {
+		await ctx.replyWithMarkdown(
+			await buildRingTimes(),
+		);
+	});
+
+	bot.hears(locale('buttons.time'), async ctx => {
+		await ctx.replyWithMarkdown(
+			await buildTime(),
+		);
+	});
+
+	bot.hears(locale('buttons.contribute'), async ctx => {
+		await ctx.replyWithMarkdown(locale('replies.contribute.reply', {
+			exampleUrl: env.SHEETS_EXAMPLE_URL,
+		}));
+	});
 
 	bot.hears(/^(.*): (.*)$/, async ctx => {
 		const [, groupName, actionName] = ctx.match!;
@@ -295,42 +344,29 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 
 		switch (actionName) {
 		case locale('buttons.curriculum.today'):
-			await sendDayCurriculum(
-				ctx,
-				'today',
-				groupName,
-				curriculum,
-				getNow(),
+			await ctx.replyWithMarkdown(
+				await buildTodayCurriculum(groupName, curriculum),
 			);
 			break;
-		case locale('buttons.curriculum.tomorrow'): {
-			await sendDayCurriculum(
-				ctx,
-				'tomorrow',
-				groupName,
-				curriculum,
-				addDays(getNow(), 1),
+
+		case locale('buttons.curriculum.tomorrow'):
+			await ctx.replyWithMarkdown(
+				await buildTomorrowCurriculum(groupName, curriculum),
 			);
 			break;
-		}
+
 		case locale('buttons.curriculum.week'):
-			await sendWeekCurriculum(
-				ctx,
-				'week',
-				groupName,
-				curriculum,
-				getNow(),
+			await ctx.replyWithMarkdown(
+				await buildCurrentWeekCurriculum(groupName, curriculum),
 			);
 			break;
+
 		case locale('buttons.curriculum.next-week'):
-			await sendWeekCurriculum(
-				ctx,
-				'next-week',
-				groupName,
-				curriculum,
-				addDays(getNow(), 7),
+			await ctx.replyWithMarkdown(
+				await buildNextWeekCurriculum(groupName, curriculum),
 			);
 			break;
+
 		default:
 			await sendSomethingWentWrong(ctx, locale);
 		}
@@ -376,5 +412,114 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 		;
 
 		await ctx.reply(locale('prompt'), extra);
+	});
+
+	type Answer = {
+		title: string;
+		content: () => Promise<string>;
+	};
+
+	const groupsFuseGetter = createCache()({
+		interval: 60,
+		intervalFn: interval => interval,
+		lifetime: Infinity,
+	})(async () => {
+		const settings = await api.globalSettings();
+
+		const actions: Answer[] = [
+			{
+				title: locale('buttons.rings'),
+				content: buildRingTimes,
+			},
+			{
+				title: locale('buttons.time'),
+				content: buildTime,
+			},
+			...await Promise.all(
+				_(settings.groups)
+					.map(({ name }) => [
+						{
+							title: `${name}: ${locale('buttons.curriculum.today')}`,
+							content: async () => await buildTodayCurriculum(
+								name,
+								(await api.groupCurriculum(name))!,
+							),
+						},
+						{
+							title: `${name}: ${locale('buttons.curriculum.tomorrow')}`,
+							content: async () => await buildTomorrowCurriculum(
+								name,
+								(await api.groupCurriculum(name))!,
+							),
+						},
+						{
+							title: `${name}: ${locale('buttons.curriculum.week')}`,
+							content: async () => await buildCurrentWeekCurriculum(
+								name,
+								(await api.groupCurriculum(name))!,
+							),
+						},
+						{
+							title: `${name}: ${locale('buttons.curriculum.next-week')}`,
+							content: async () => await buildNextWeekCurriculum(
+								name,
+								(await api.groupCurriculum(name))!,
+							),
+						},
+					])
+					.flatten()
+					.value()
+			),
+		];
+
+		return new Fuse(actions, {
+			keys: [
+				'title',
+			],
+		});
+	});
+
+	bot.on('inline_query', async ctx => {
+		let answers: Answer[];
+
+		if (ctx.inlineQuery!.query.length < 2) {
+			answers = [
+				{
+					title: locale('buttons.rings'),
+					content: buildRingTimes,
+				},
+				{
+					title: locale('buttons.time'),
+					content: buildTime,
+				},
+			];
+		} else {
+			const fuse = await groupsFuseGetter();
+
+			answers = (
+				await Promise.all(
+					fuse.search(ctx.inlineQuery!.query).slice(0, 50),
+				)
+			).map(it => it.item);
+		}
+
+		await ctx.answerInlineQuery(
+			await Promise.all(
+				answers
+					.map(async item => ({
+						type: 'article',
+						id: hash(item.title),
+						title: item.title,
+						'input_message_content': {
+							'message_text': await item.content(),
+							'parse_mode': 'Markdown',
+						},
+					}))
+			),
+			{
+				'cache_time': process.env.NODE_ENV === 'development' ? 0 : 30,
+				'is_personal': false,
+			},
+		);
 	});
 };

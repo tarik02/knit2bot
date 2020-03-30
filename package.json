@@ -43,6 +43,7 @@
 		"dotenv": "^8.1.0",
 		"fp-ts": "^2.5.3",
 		"fs-extra": "^8.1.0",
+		"fuse.js": "^5.0.10-beta",
 		"googleapis": "39",
 		"humanize-duration": "^3.21.0",
 		"io-ts": "^2.1.2",

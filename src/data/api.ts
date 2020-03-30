@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 
 import { Locale } from '../locales/Locale';
+import { createCache } from '../utils/cache';
 
-import { createCache } from './cache';
 import { parseSettings, getSpreadsheetId, parseCurriculum } from './sheets';
 
 export const createAPI = (
