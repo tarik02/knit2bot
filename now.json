@@ -3,7 +3,6 @@
 	"public": true,
 	"env": {
 		"NODE_ENV": "production",
-		"COVID_COUNTRY_CODE": "@knit2bot_covid_country_code",
 		"LOCALE": "@knit2bot_locale",
 		"TIMEZONE": "@knit2bot_timezone",
 		"BOT_TOKEN": "@knit2bot_token",

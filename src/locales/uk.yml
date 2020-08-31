@@ -23,13 +23,6 @@ errors:
 
 
 replies:
-  footer:
-    covid: |
-      *=== Статистика COVID-19 в {country} ===*
-          🚑 Підтверджено: {confirmed}
-          💪 Видужало: {recovered}
-          ☠️ Померло: {deaths}
-
   select-group: 'Виберіть групу'
 
   contribute:

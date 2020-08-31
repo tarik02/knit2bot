@@ -13,7 +13,6 @@ export const Env = t.intersection([
 		SHEETS_ROOT_URL: t.string,
 		SHEETS_EXAMPLE_URL: t.string,
 
-		COVID_COUNTRY_CODE: t.string,
 		LOCALE: t.string,
 		TIMEZONE: t.string,
 

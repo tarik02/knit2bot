@@ -6,7 +6,6 @@ import _ from 'lodash';
 import humanizeDuration from 'humanize-duration';
 
 import { createAPI } from './data/api';
-import { createCovidAPI } from './data/covid';
 import { Curriculum } from './data/curriculum';
 import { readLocale } from './locales/Locale';
 import { errorMiddleware, sendSomethingWentWrong } from './parts/error-middleware';
@@ -27,8 +26,6 @@ const dayNames = [
 
 export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 	const locale = await readLocale(env.LOCALE);
-
-	const covidApi = createCovidAPI();
 
 	const api = createAPI(
 		locale,
@@ -114,23 +111,6 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 			url,
 		}));
 	});
-
-	const buildFooter = async () => {
-		const countriesData = await covidApi.getCountriesData();
-
-		if (!countriesData || !countriesData[env.COVID_COUNTRY_CODE]) {
-			return undefined;
-		}
-
-		const countryData = countriesData[env.COVID_COUNTRY_CODE]!;
-
-		return locale('replies.footer.covid', {
-			country: countryData.Country,
-			confirmed: String(countryData.TotalConfirmed),
-			recovered: String(countryData.TotalRecovered),
-			deaths: String(countryData.TotalDeaths),
-		});
-	};
 
 	const buildRingTimes = async () => {
 		const settings = await api.globalSettings();
@@ -337,19 +317,13 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 
 	bot.hears(locale('buttons.rings'), async ctx => {
 		await ctx.replyWithMarkdown(
-			[
-				await buildRingTimes(),
-				await buildFooter(),
-			].filter(_.isString).join('\n\n'),
+			await buildRingTimes(),
 		);
 	});
 
 	bot.hears(locale('buttons.time'), async ctx => {
 		await ctx.replyWithMarkdown(
-			[
-				await buildTime(),
-				await buildFooter(),
-			].filter(_.isString).join('\n\n'),
+			await buildTime(),
 		);
 	});
 
@@ -371,37 +345,25 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 		switch (actionName) {
 		case locale('buttons.curriculum.today'):
 			await ctx.replyWithMarkdown(
-				[
-					await buildTodayCurriculum(groupName, curriculum),
-					await buildFooter(),
-				].filter(_.isString).join('\n\n'),
+				await buildTodayCurriculum(groupName, curriculum),
 			);
 			break;
 
 		case locale('buttons.curriculum.tomorrow'):
 			await ctx.replyWithMarkdown(
-				[
-					await buildTomorrowCurriculum(groupName, curriculum),
-					await buildFooter(),
-				].filter(_.isString).join('\n\n'),
+				await buildTomorrowCurriculum(groupName, curriculum),
 			);
 			break;
 
 		case locale('buttons.curriculum.week'):
 			await ctx.replyWithMarkdown(
-				[
-					await buildCurrentWeekCurriculum(groupName, curriculum),
-					await buildFooter(),
-				].filter(_.isString).join('\n\n'),
+				await buildCurrentWeekCurriculum(groupName, curriculum),
 			);
 			break;
 
 		case locale('buttons.curriculum.next-week'):
 			await ctx.replyWithMarkdown(
-				[
-					await buildNextWeekCurriculum(groupName, curriculum),
-					await buildFooter(),
-				].filter(_.isString).join('\n\n'),
+				await buildNextWeekCurriculum(groupName, curriculum),
 			);
 			break;
 
