@@ -2,6 +2,7 @@ import { getOrElse, Either } from 'fp-ts/lib/Either';
 import _ from 'lodash';
 
 import { GlobalSettings } from './types';
+import { cleanDayName } from '../utils/cleanDayName';
 
 export const getSpreadsheetId = (anything: string) => (
 	anything
@@ -115,7 +116,7 @@ export const parseCurriculum = (values: string[][], days: string[]) => {
 	return _(values)
 		.slice(2)
 		.map(row => {
-			const dayName = row[0];
+			const dayName = cleanDayName(row[0]);
 			const day = days.indexOf(dayName);
 
 			const curriculum = _(row)

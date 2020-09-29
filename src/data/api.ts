@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 
 import { Locale } from '../locales/Locale';
 import { createCache } from '../utils/cache';
+import { cleanDayName } from '../utils/cleanDayName';
 
 import { parseSettings, getSpreadsheetId, parseCurriculum } from './sheets';
 
@@ -35,13 +36,13 @@ export const createAPI = (
 	};
 
 	const days = [
-		locale('days.monday.name'),
-		locale('days.tuesday.name'),
-		locale('days.wednesday.name'),
-		locale('days.thursday.name'),
-		locale('days.friday.name'),
-		locale('days.saturday.name'),
-		locale('days.sunday.name'),
+		cleanDayName(locale('days.monday.name')),
+		cleanDayName(locale('days.tuesday.name')),
+		cleanDayName(locale('days.wednesday.name')),
+		cleanDayName(locale('days.thursday.name')),
+		cleanDayName(locale('days.friday.name')),
+		cleanDayName(locale('days.saturday.name')),
+		cleanDayName(locale('days.sunday.name')),
 	];
 
 	const globalSettingsSheetId = getSpreadsheetId(globalSettingsSheet);
