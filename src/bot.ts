@@ -46,10 +46,12 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 
 		const extra = Markup
 			.keyboard([
-				...alignButtons(settings.groups.map(it => it.name), 2),
 				[
 					locale('buttons.contribute'),
+					locale('buttons.rings'),
+					locale('buttons.time'),
 				],
+				...alignButtons(settings.groups.map(it => it.name), 2),
 			])
 			.oneTime(false)
 			.resize(true)
