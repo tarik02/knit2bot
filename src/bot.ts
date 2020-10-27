@@ -58,7 +58,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 			.extra()
 		;
 
-		await ctx.reply(locale('replies.select-group'), extra);
+		await ctx.reply(locale('replies.start'), extra);
 	};
 
 	bot.start(onStart);
