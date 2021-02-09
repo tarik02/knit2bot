@@ -93,8 +93,15 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 
 	bot.hears(/^\/add\s+([^\s]+)\s+(.*)$/, async ctx => {
 		const from = ctx.from!;
-		const group = ctx.match![1]!;
-		const url = ctx.match![2]!.trim();
+		let group = ctx.match![1]!;
+		let url = ctx.match![2]!.trim();
+
+		if (group.length >= 2 && group[0] === '<' && group[group.length - 1] === '>') {
+			group = group.substring(1, group.length - 2);
+		}
+		if (url.length >= 2 && url[0] === '<' && url[url.length - 1] === '>') {
+			url = url.substring(1, url.length - 2);
+		}
 
 		try {
 			await api.testCurriculum(url);
