@@ -91,7 +91,7 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 		}));
 	});
 
-	bot.hears(/^\/add\s+(?:<([^\s]+)>|([^\s]+))\s+(?:<(.*)>|(.*))$/, async ctx => {
+	bot.hears(/^\/add\s+(<[^\s]+>|[^\s]+)\s+(<.*>|.*)$/, async ctx => {
 		const from = ctx.from!;
 		const group = ctx.match![1]!;
 		const url = ctx.match![2]!.trim();
