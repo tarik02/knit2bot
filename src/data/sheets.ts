@@ -1,8 +1,10 @@
 import { getOrElse, Either } from 'fp-ts/lib/Either';
 import _ from 'lodash';
 
-import { GlobalSettings } from './types';
 import { cleanDayName } from '../utils/cleanDayName';
+
+import { GlobalSettings } from './types';
+
 
 export const getSpreadsheetId = (anything: string) => (
 	anything
@@ -57,6 +59,19 @@ const getHeaders = (values: string[], tables: Tables) => {
 	}
 
 	return results;
+};
+
+const normalizeDayValue = (value: string | undefined): string | undefined => {
+	value = value?.trim();
+
+	if (value === undefined || value === '') {
+		return undefined;
+	}
+
+	return value
+		.split('\n')
+		.map(it => it.replace(/^[\r\n\t ]/, '').replace(/[\r\n\t ]$/, ''))
+		.join(' / ')
 };
 
 export const parseSettings = (
@@ -123,15 +138,12 @@ export const parseCurriculum = (values: string[][], days: string[]) => {
 				.slice(1)
 				.chunk(2)
 				.map(([first, second]: [string | undefined, string | undefined]) => {
-					first = first?.trim();
-					if (first === '' || first === '-') {
+					first = normalizeDayValue(first);
+					if (first === '-') {
 						first = undefined;
 					}
 
-					second = second?.trim();
-					if (second === '') {
-						second = undefined;
-					}
+					second = normalizeDayValue(second);
 
 					if (second === '-') {
 						second = undefined;
