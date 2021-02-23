@@ -1,3 +1,3 @@
 export const cleanDayName = (input: string) => input
-	.replace(/['"`]/, '')
+	.replace(/['"` \t\n\r]/, '')
 	.toLowerCase();
