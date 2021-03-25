@@ -103,6 +103,11 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 			url = url.substring(1, url.length - 2);
 		}
 
+		if (url.indexOf('drive.google.com') !== -1) {
+			await ctx.reply(locale('replies.add.drive'));
+			return;
+		}
+
 		try {
 			await api.testCurriculum(url);
 		} catch (e) {
