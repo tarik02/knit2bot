@@ -108,13 +108,13 @@ export const main = async (env: Env, bot: Telegraf<ContextMessageUpdate>) => {
 			return;
 		}
 
-		try {
-			await api.testCurriculum(url);
-		} catch (e) {
-			console.error(e);
-			await ctx.reply(locale('replies.add.error'));
-			return;
-		}
+		// try {
+		// 	await api.testCurriculum(url);
+		// } catch (e) {
+		// 	console.error(e);
+		// 	await ctx.reply(locale('replies.add.error'));
+		// 	return;
+		// }
 
 		await ctx.reply(locale('replies.add.reply'));
 
